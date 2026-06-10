@@ -1,0 +1,53 @@
+---All operations of query done in products.models---
+
+section-1. QuerySet API — filter, exclude, annotate, aggregate, Q objects, F expressions
+
+Q1. What is a QuerySet? Why is it called 'lazy'? When does Django actually hit the database?
+-> QuerySet is a collection of database objects. It is LAZY because The query runs only when Django needs the results, keep modifying the QuerySet no database query is sent.
+
+Q2. Write a query to get all active products with price between 100 and 1000, ordered by price
+ascending.(model in shop_project: app->products)
+>>> from products.models import Product
+>>> product = Product.objects.filter(is_active=True, price__range=(100,1000)).order_by('price')
+>>> product
+<QuerySet [<Product: Mouse>]>
+
+Q3. What are Q objects? Write a query to find products that are EITHER priced under 500 OR have
+stock over 200.
+->Q objects allow you to build OR, NOT, and nested combinations using | (OR), & (AND), and ~ (NOT) operators.
+>>> from products.models import Product
+>>> from django.db.models import Q
+>>> product = Product.objects.filter(Q(price__lt=500)|Q(stock__gt=200))
+>>> product
+<QuerySet [<Product: Keyboard>, <Product: Pen>, <Product: headphones>]>
+
+Q4. Use F() to atomically decrement the stock of Product with pk=7 by 3 units. Why is F() safer than
+fetching and saving?
+->F() safer than fetching and saving, because it solve the race condition ocuured in fetching and saving.
+Product.objects.filter(pk=7).update(
+    stock=F('stock') - 3
+)
+
+Q5. What is the difference between aggregate() and annotate()? Write one example of each.
+ans:
+aggregate():
+-> Calculates a summary value for the entire QuerySet, Return Type: Dictionary
+
+from django.db.models import Avg
+
+result = Product.objects.aggregate(
+    avg_price=Avg('price')
+)
+
+annotate():
+-> Adds a calculated value to each object in the QuerySet Return type: QuerySet
+
+from django.db.models import Count
+
+categories = Category.objects.annotate(
+    product_count=Count('product')
+)
+
+Electronics 15
+Books 8
+Clothing 12

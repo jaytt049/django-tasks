@@ -1,0 +1,195 @@
+---All operations of query done in products.models---
+
+section-4. Preventing N+1 Queries
+
+Q1. What is the N+1 query problem? Write a code example that demonstrates it, then fix it.
+
+-> N+1 Query Problem occurs when:
+
+1 Query fetches objects
+
+Then N additional queries fetch related objects.
+
+Bad Example:
+
+products = Product.objects.all()
+
+for product in products:
+print(product.category.name)
+
+If 100 products exist:
+
+1 query for products
+100 queries for categories
+
+Total = 101 queries
+
+Fix:
+
+products = Product.objects.select_related(
+'category'
+)
+
+for product in products:
+print(product.category.name)
+
+Total = 1 query
+
+Interview Point:
+N+1 is one of the biggest Django performance issues.
+
+Q2. What is the difference between select_related() and prefetch_related()? Which would you use for:
+(a) product.category
+(b) product.tags.all()
+(c) user.profile
+
+select_related():
+
+-> Uses SQL JOIN
+-> Works with ForeignKey and OneToOneField
+
+Example:
+
+Product.objects.select_related(
+'category'
+)
+
+prefetch_related():
+
+-> Executes separate query
+-> Works with ManyToMany and reverse relationships
+
+Example:
+
+Product.objects.prefetch_related(
+'tags'
+)
+
+Answers:
+
+(a) product.category
+Use:
+select_related('category')
+
+(b) product.tags.all()
+Use:
+prefetch_related('tags')
+
+(c) user.profile
+Use:
+select_related('profile')
+
+Q3. You have a view that lists 500 Orders, each showing the related Product name and the Product's Category name. Write the optimised queryset.
+
+> > > orders = Order.objects.select_related(
+> > > ...     'product',
+> > > ...     'product__category'
+> > > ... )
+
+Now:
+
+order.product.name
+
+and
+
+order.product.category.name
+
+do not create extra queries.
+
+Interview Point:
+Follow ForeignKey chains using __
+
+Q4. What is the difference between only() and values()? When would you use one over the other?
+
+only():
+
+-> Returns model objects
+-> Loads only selected columns
+
+Example:
+
+> > > Product.objects.only(
+> > > ...     'id',
+> > > ...     'name'
+> > > ... )
+
+values():
+
+-> Returns dictionaries
+
+Example:
+
+> > > Product.objects.values(
+> > > ...     'id',
+> > > ...     'name'
+> > > ... )
+
+Output:
+
+[
+{'id':1,'name':'Laptop'},
+{'id':2,'name':'Phone'}
+]
+
+Use only():
+When ORM objects are needed.
+
+Use values():
+When only raw data is needed.
+
+Q5. Rewrite this bad code using bulk_create()
+
+Bad:
+
+for i in range(500):
+Product.objects.create(
+name=f'Item {i}',
+price=10
+)
+
+Optimized:
+
+products = [
+
+```
+Product(
+    name=f'Item {i}',
+    price=10
+)
+
+for i in range(500)
+```
+
+]
+
+Product.objects.bulk_create(
+products
+)
+
+Interview Point:
+bulk_create performs a single INSERT query.
+
+Q6. How would you check how many SQL queries a view is executing in development?
+
+Method 1:
+
+Django Shell
+
+> > > from django.db import connection
+> > > len(connection.queries)
+
+Method 2:
+
+Install Django Debug Toolbar
+
+pip install django-debug-toolbar
+
+Shows:
+
+1. Total queries
+2. Query execution time
+3. Duplicate queries
+4. N+1 problems
+
+Interview Point:
+Django Debug Toolbar is the easiest way to detect N+1 issues.

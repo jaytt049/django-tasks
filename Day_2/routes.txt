@@ -1,0 +1,36 @@
+# FILTER
+http://127.0.0.1:8000/active-products/
+
+# FILTER + RANGE + ORDER BY
+http://127.0.0.1:8000/price-range/
+
+# EXCLUDE
+http://127.0.0.1:8000/exclude-products/
+
+# Q OBJECTS (OR conditions)
+http://127.0.0.1:8000/q-objects/
+
+# F EXPRESSION (decrement stock)
+http://127.0.0.1:8000/decrement-stock/1/
+http://127.0.0.1:8000/decrement-stock/2/
+http://127.0.0.1:8000/decrement-stock/3/
+
+# AGGREGATE
+http://127.0.0.1:8000/aggregate/
+
+# ANNOTATE
+http://127.0.0.1:8000/annotate/
+
+# CUSTOM MANAGER
+http://127.0.0.1:8000/custom-manager/
+
+# TRANSACTION HANDLING
+http://127.0.0.1:8000/place-order/1/
+http://127.0.0.1:8000/place-order/2/
+http://127.0.0.1:8000/place-order/3/
+
+# SELECT RELATED
+http://127.0.0.1:8000/select-related/
+
+# PREFETCH RELATED
+http://127.0.0.1:8000/prefetch-related/

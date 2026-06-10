@@ -1,0 +1,182 @@
+---All operations of query done in products.models---
+
+section-3. Custom Managers & Transaction Handling
+
+Q1. What is a custom Manager? How do you create one? Write a manager for a 'BlogPost' model that only returns published posts.
+
+-> A Manager is the interface through which database query operations are provided to Django models.
+
+-> Django automatically creates:
+objects = models.Manager()
+
+-> Custom Managers are used to:
+
+1. Reuse common queries
+2. Keep views clean
+3. Provide meaningful query methods
+
+Example:
+
+class PublishedManager(models.Manager):
+
+```
+def get_queryset(self):
+    return super().get_queryset().filter(
+        is_published=True
+    )
+```
+
+class BlogPost(models.Model):
+
+```
+title = models.CharField(max_length=100)
+
+is_published = models.BooleanField(
+    default=False
+)
+
+objects = models.Manager()
+
+published = PublishedManager()
+```
+
+Usage:
+
+> > > BlogPost.objects.all()
+> > > All blog posts
+
+> > > BlogPost.published.all()
+> > > Only published blog posts
+
+Interview Point:
+Always keep objects = models.Manager() along with custom managers.
+
+Q2. Why must you always keep objects = models.Manager() when adding a custom manager? What breaks if you remove it?
+
+-> Django Admin, serializers and many internal Django operations expect a default manager.
+
+Example:
+
+class Product(models.Model):
+
+```
+objects = models.Manager()
+
+active = ActiveProductManager()
+```
+
+If objects is removed:
+
+class Product(models.Model):
+
+```
+active = ActiveProductManager()
+```
+
+Problems:
+
+1. Admin panel may not work correctly
+2. Some Django tools expect objects
+3. Default access Product.objects.all() fails
+
+Interview Point:
+Always keep objects = models.Manager() as default manager.
+
+Q3. What is a database transaction? Why do we need transaction.atomic()?
+
+-> A Transaction groups multiple database operations into a single unit.
+
+Either:
+ALL operations succeed
+
+OR
+
+ALL operations fail
+
+No partial updates occur.
+
+Example:
+
+from django.db import transaction
+
+with transaction.atomic():
+
+```
+order = Order.objects.create(
+    product=product,
+    quantity=2,
+    total=1000
+)
+
+Product.objects.filter(
+    pk=product.id
+).update(
+    stock=F('stock') - 2
+)
+```
+
+If any exception occurs:
+
+-> Order is not created
+-> Stock is not updated
+
+Everything is rolled back.
+
+Interview Point:
+transaction.atomic() maintains database consistency.
+
+Q4. What is select_for_update()? When would you use NOWAIT vs SKIP LOCKED?
+
+-> select_for_update() locks rows until transaction completes.
+
+Used inside transaction.atomic().
+
+Example:
+
+from django.db import transaction
+
+with transaction.atomic():
+
+```
+product = Product.objects.select_for_update().get(
+    pk=1
+)
+
+product.stock -= 1
+
+product.save()
+```
+
+Other transactions must wait until lock is released.
+
+NOWAIT:
+
+Product.objects.select_for_update(
+nowait=True
+).get(pk=1)
+
+-> Raises error immediately if row is locked.
+
+Use:
+When waiting is not acceptable.
+
+SKIP LOCKED:
+
+Product.objects.select_for_update(
+skip_locked=True
+).filter(
+is_active=True
+)
+
+-> Skips locked rows.
+
+Use:
+Job queues, background workers.
+
+Interview Point:
+
+NOWAIT
+= Fail immediately if locked
+
+SKIP LOCKED
+= Ignore locked rows and continue
